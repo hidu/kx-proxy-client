@@ -5,7 +5,7 @@ kx-proxy-client
 
 install
 
-go get -u -branch client github.com/hidu/kx-proxy-client
+go get -u  github.com/hidu/kx-proxy-client
 
 
 
