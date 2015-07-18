@@ -40,4 +40,4 @@ openssl req -new -x509 -key key.pem -out cert.pem -days 3650
 
 
 kx-proxy-server
-https://github.com.hidu/kx-proxy
+https://github.com/hidu/kx-proxy
