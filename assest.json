@@ -1,0 +1,5 @@
+{
+  "src":"res",
+  "dest":"client/assest.go",
+  "package":"client"
+}

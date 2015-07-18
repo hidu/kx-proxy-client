@@ -1,0 +1,9 @@
+{
+    "proxy":[
+        {"url":"https://kx-proxy-server-domain/","weight":1,"secertKey":"abcde"}
+    ],
+    "parent":"",
+    "ssl":true,
+    "ssl_client_cert" :"",
+    "ssl_server_key" :""
+}

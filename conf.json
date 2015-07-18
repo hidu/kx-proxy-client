@@ -1,0 +1,9 @@
+{
+    "proxy":[
+        {"url":"https://you-proxy.com/","weight":1,"secertKey":""}
+    ],
+    "parent":"",
+    "ssl":true,
+    "ssl_client_cert" :"",
+    "ssl_server_key" :""
+}
