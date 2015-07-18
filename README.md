@@ -1,7 +1,7 @@
 kx-proxy-client
 ======
 
-这个是[kx-proxy](https://github.com.hidu/kx-proxy)的本地客户端程序
+这个是[kx-proxy](https://github.com/hidu/kx-proxy)的本地客户端程序
 
 install
 ```
