@@ -82,7 +82,7 @@ func (statics AssestStruct) GetContent(name string) string {
 
 func (statics AssestStruct) GetFileNames(dir string) []string {
 	names := make([]string, len(statics.Files))
-	for name, _ := range statics.Files {
+	for name := range statics.Files {
 		names = append(names, name)
 	}
 	return names
@@ -152,19 +152,19 @@ func _assestBase64Decode(data string) string {
 var Assest *AssestStruct = &AssestStruct{
 	Files: map[string]*AssestFile{
 
-		_assestBase64Decode("cmVzL2NlcnQucGVt"): &AssestFile{
+		_assestBase64Decode("cmVzL2NlcnQucGVt"): {
 			Name:    _assestBase64Decode("cmVzL2NlcnQucGVt"),
 			Mtime:   1430665837,
 			Content: _assestGzipBase64decode("H4sIAAAJbogA/3SUyc6jOBeG91zFv0e/GDKRRS1sMNgQSJgDuwTCGCAQwAlX39+Xkqq71F3e2Hr0HMnSe875//eBSCPW/2TkeEQlMvDQhzImIUq7yDLobjmgBIKc6MCAE/AH1tt1kwl4TXZ7zSXXlWIjCG0fmFr0khegw9wKGAgiD9yLyHR8imikBLaNFfBCcRgXafjiCbIeKa5feAHpdwEEnak26SPVCiEqNxVzFfn5ot3r1N3TBOvz7TfZ/E3+D5cyuEgs0/Op5YHl636ZirkKv1n1xRST/mIVbEz7SWX780sNUT0KFRQwJjQ1IPgIUmo6WtBE5+CZylC5nJ2N6UgU/ywwFBi3X6xLQzJF4n48iMUjxv7MJBi+r6vin7LyJ/mXSwgkFbBgXvdMUZfanvIQ2EgF4CgDWwLfgpwbX28EeP15fsKSe2a57PTZzb1lmXC5N06ZZjyNW6YaObEYjaZa7pPOZTxbDobIgyNZX+TxkLOL0T106XKraX/rxLmR6j0epVeYnLf5jmwjJraQElSDeronccpiNYtFMuIdHwHdJq2JexQOgyVbDtemuL3bOYv9AbBdusJVecttZuKOTRCcLq5WvkegJnt76eUpOo3GMZ7ldmvA03nVnK8DbMOMB+5j2bWpc3Ky6MSbPj8xIwsyK6nW3F2ZXeVoqMHVd2/b0/BaJ/Ma14k9ndp86fFxfbtvAcz4ONQrSOdYDUNhfWaQLugv8ajoTcSCfsW9+328N6t2CuBzZ1cdJr1vTkt4k3emC2Nf3rw2rk0UYAPYCYAyXvWz67C9Rmpu+2dsHbv5dWAtEJzz6RDMmE22/oONfIq/W93hKwhzqnbg4zJ/khXwkT0IfAoogtzyM/e/Y/c/sTPfWTeCcawmx9Cdys/dpI4yQX5ow+AabOS8k+fjlHm5hGKB95Cz7yqtkl7qxo7CfMMzSpSr/WtzDQ/NeyRLxh6vAii3VNiX7GGejE5kZ/A1B5KdBUM/cDRdFFJAuWLnMuLKK7M7ah6qwMmshfU+eXPNxErjZbtKteEsbK4EHjJ3LbZj690zKyhFPx3dkcfXGhbLJN07hmor7NHwqh7ekoe5pvCmi4r2cn9YIh+wh3ctcrpitAV2HrVyyqsytsrUzpSTxBPT4hgZ3BMuE2oYCCo++q6dL5fSNbpy9X48AzZrDxayFjapIEI5KVeQSy8OZsegt+eCkxzmMEeeqq6vIEm7KSr5t3i/nTNcPOiPH8xn6yFL+fcm/AsAAP//AQAA//8Ir+SsJgUAAA=="),
 		},
 
-		_assestBase64Decode("cmVzL2NvbmYuanNvbg=="): &AssestFile{
+		_assestBase64Decode("cmVzL2NvbmYuanNvbg=="): {
 			Name:    _assestBase64Decode("cmVzL2NvbmYuanNvbg=="),
 			Mtime:   1437226440,
 			Content: _assestGzipBase64decode("H4sIAAAJbogA/1SNQQqDMBBF955C/toQus0VeoRSQhqHGrQqk9haxLt3kgqlf/dnHv9tVS3BzNP6hrmUlrNh4QEGXUpzNFr3qyqMisRPYtVODxdGjQYvCvcuwZwaRPLE6UyyBHfzLWEvg9fmsDimUVDgOMQojsQL/br1QxDI5iXUf6j9um0vgvyp9g8AAAD//wEAAP//slG6cL4AAAA="),
 		},
 
-		_assestBase64Decode("cmVzL2tleS5wZW0="): &AssestFile{
+		_assestBase64Decode("cmVzL2tleS5wZW0="): {
 			Name:    _assestBase64Decode("cmVzL2tleS5wZW0="),
 			Mtime:   1430665745,
 			Content: _assestGzipBase64decode("H4sIAAAJbogA/2zVtw6jUBYG4J6nmB6tyAaKKeACJgdjYofJmJzh6dc79d7yHuno1ycd/f/53+PFp2L+ebncH/ul+Nxb/KOJ0b8JZCiKOHIKz3Ea4ByRQ9UlXPgaWYoSvKYid/OiwJK2e9VZgR5x36wIXq1a19ztpiIFCsH1rOEoZylkAla9hG9tGFUmyb/HlA/43jFfVl6ZM0jDR0krjyg2RcFvZslu0ziDZQkqYlxZZRqNONVRekOexGCeTWC+kD6T+9YpYdmbOXjICLmp89LZEKvzfTtxn/W1clIKsc49gS2yV82Kd9A/NN4OiS78zHwfFCjnjjfdZy/7VUQ2anjotsJcYaYNibTC7gqWBkn+x3Pzhz2fZLqT8jd1Nrsv70m2yLx9cHyBxoHa8MceS0GAkaGoYuqJW4LaRTA3EQh0TWzMGk2/+fxCO80gK5NnbHeQA9pw+dgD1Em5jiJwDsdzww/bAYzYl+DOscDSpS/Uf8sFiR9XFuAsVYVln8AeN24XVZ7cpNYS++zmvPJwZXHSCjO+Jsvj3Ws19ysxGgwIkJYzfXc8iss8rWnpbVurlka+mom8fT0OtT56wU7FegDpJjqZ1xNYqykZseQHM69fKPRd2Dp7qJ7UyPk8St9PZUaOgSKrjlTMKg4W+U1673NO1NYzEgZa3DxfESiVYLeelGlBXuzba/MYLtm7SEsliNL8/qBIORJwFJXQ+mDmqt5KOtaSMGNc9yQvcbc84DrwY/QfkKRajqNrTNnjPhNpumN6n2wdSXVw3DxR9ILUtsAhccJTAiQIFWWoWxzHK2D2gvlKFCgIKLvOcYobnjxn5ztTPIKIWM4xlEfTmEOtoQH69gtYdT6i6xKNMZodjNUivnEny+bQYwyNTyAj9M4ETabnivGUzHFRcBPcHwdOy2KWUZc3a/vO23F8xsJcT8/twvPbIaJxg0bDmCntAjbMg8GgbC123vgUTPWFrTzV2bbhLSSlqJ8nSz0JavcIowO5Tf9LbOYfKDyektIBQboBRTQo84xhwqjMRl/ghyzQlMVlutW5hyrDZi0kLeXi5y2EB5y4RxTtFMTnzO/XH+GtjVXcIKauae9wJHtGOYehWOtckMFw8Yo+zd3gyhKa+OD6tEueZqfjtpCoM34pvKW0L494VZMzTulwyvFndyddgFUEgb67Cui/yJxPBtuI4Q4dt3a6M7owDj70CW2Wer+uj2Cm79DoxpWotlBZ2lFhhW6V7sjLtFRmLHZ9xs3czAKVBhiHI69KZYhKhMKUpVAx9nva27G+lMztmd75k9AQbNKwh9qUYdA1CfqiXGGqTcAisSgsKjjZkxUdzoUiVJU/iHeUxXqXyT7AR0vAbxSUETcj+UaOD1yG6ezuP9/gDisGrsuqUhimQwVO054VBGPbb9vPTh/gt2jUG83PintYV0ultJN86eUIJdmlDt5o3/gYY1YvygSIfwbXajUUJALrQeCkpqnS9XUId7cprPL522OsOdg1+upWLXCZTViVhYulPqu6TR2JduFcXDPIBYJPeggcjS8d4CnpMs+sTWlgYfR3vctu/Dnwz8m7nIZIev/6IDFRi78TAyW9FMP05lOo299ogIEelZKwWwnF/sJVmX21V+Qi/ZBqmYxlnGbVCrkM2YMV0GiZR+Z4XeY1OK9jhjArxAwf8zOPEhYAH4pI496PLl05L+ESg7RlymzlSZ+FS+b9XcMpUij//oX+1YpoCv+/bv4LAAD//wEAAP//GV2tVY8GAAA="),

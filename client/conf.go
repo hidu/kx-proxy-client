@@ -18,8 +18,8 @@ type ClientConf struct {
 	SSlOn           bool   `json:"ssl"`
 	SecertKeyMaps   map[string]string
 	SslCert         tls.Certificate
-	ssl_client_cert string `json:"ssl_client_cert"`
-	ssl_server_key  string `json:"ssl_server_key"`
+	Ssl_client_cert string `json:"ssl_client_cert"`
+	Ssl_server_key  string `json:"ssl_server_key"`
 }
 
 type ProxyItem struct {
@@ -75,8 +75,8 @@ func LoadConf(confPath string) *ClientConf {
 
 		proxyUrl := strings.TrimRight(item.Url, "/")
 		conf.SecertKeyMaps[proxyUrl] = item.SecertKey
-		if(item.Weight>1000){
-			log.Fatalln("weight must <1000,current is :",item.Weight)
+		if item.Weight > 1000 {
+			log.Fatalln("weight must <1000,current is :", item.Weight)
 		}
 		for i := 0; i < item.Weight; i++ {
 			conf.Proxy_All = append(conf.Proxy_All, proxyUrl)
@@ -86,7 +86,8 @@ func LoadConf(confPath string) *ClientConf {
 	rand.Seed(time.Now().Unix())
 
 	if conf.SSlOn {
-		cert, err := getSslCert(conf.ssl_client_cert, conf.ssl_server_key)
+		log.Println("sslon", conf.Ssl_client_cert, conf.Ssl_server_key)
+		cert, err := getSslCert(conf.Ssl_client_cert, conf.Ssl_server_key)
 		if err != nil {
 			log.Fatalln("ssl ca config error:", err)
 		} else {
