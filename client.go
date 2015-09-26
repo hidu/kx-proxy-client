@@ -1,16 +1,27 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
 	"flag"
 	"fmt"
 	"github.com/elazarl/goproxy"
 	"github.com/hidu/kx-proxy-client/client"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
 )
 
+const (
+	aesTable = "kxproxyb8PsyCQ4b"
+)
+
+var (
+	aesBlock cipher.Block
+)
 var confPath = flag.String("conf", "conf.json", "json conf")
 var verbose = flag.Bool("v", false, "should every proxy request be logged to stdout")
 var addr = flag.String("addr", ":8080", "proxy listen address")
@@ -18,6 +29,15 @@ var addr = flag.String("addr", ":8080", "proxy listen address")
 var conf *client.ClientConf
 
 var MitmConnect *goproxy.ConnectAction
+
+func init() {
+	var err error
+	aesBlock, err = aes.NewCipher([]byte(aesTable))
+
+	if err != nil {
+		panic(err)
+	}
+}
 
 func initMimtConnect() {
 	MitmConnect = &goproxy.ConnectAction{
@@ -54,6 +74,31 @@ func copyHeaders(dst, src http.Header) {
 	}
 }
 
+func encryptUrl(srcUrl string) (string, error) {
+	src := []byte(srcUrl)
+	padLen := aes.BlockSize - (len(src) % aes.BlockSize)
+
+	for i := 0; i < padLen; i++ {
+		src = append(src, byte(padLen))
+	}
+
+	srcLen := len(src)
+	encryptText := make([]byte, srcLen+aes.BlockSize)
+
+	iv := encryptText[srcLen:]
+
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+
+	mode := cipher.NewCBCEncrypter(aesBlock, iv)
+
+	mode.CryptBlocks(encryptText[:srcLen], src)
+	s := base64.URLEncoding.EncodeToString(encryptText)
+	return s, nil
+
+}
+
 func requestHanderFunc(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	urlOld := r.URL.String()
 	log.Println("url->", urlOld)
@@ -65,16 +110,26 @@ func requestHanderFunc(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *
 		return r, nil
 	}
 
-	var urlReq = base64.StdEncoding.EncodeToString([]byte(urlOld))
+	//	var urlReq = base64.StdEncoding.EncodeToString([]byte(urlOld))
+	urlReq, err := encryptUrl(urlOld)
+
+	if err != nil {
+		log.Println("encryptUrl", urlOld, "failed", err)
+		return r, nil
+	}
+
 	proxyUrl := conf.GetOneHost()
 	urlNew := proxyUrl + "/p/" + urlReq
 	log.Println(urlOld, "--->", urlNew)
-	var err error
+	//	var err error
 	r.URL, err = url.Parse(urlNew)
 	r.Host = r.URL.Host
 
 	r.Header.Add("is_client", "1")
 	r.Header.Set("KxKey", conf.GetSecertKeyByUrl(proxyUrl))
+	if conf.HiddenIp {
+		r.Header.Set("hidden_ip", "1")
+	}
 
 	if err != nil {
 		log.Println("parse new url failed", err)

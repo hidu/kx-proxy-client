@@ -20,6 +20,7 @@ type ClientConf struct {
 	SslCert         tls.Certificate
 	Ssl_client_cert string `json:"ssl_client_cert"`
 	Ssl_server_key  string `json:"ssl_server_key"`
+	HiddenIp        bool   `json:"hidden_ip"`
 }
 
 type ProxyItem struct {

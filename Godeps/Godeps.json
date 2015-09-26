@@ -1,0 +1,14 @@
+{
+	"ImportPath": "github.com/hidu/kx-proxy-client",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/elazarl/goproxy",
+			"Comment": "v1.0-63-gaedaad7",
+			"Rev": "aedaad751e7676772297daf9ddb3b3234cee0e0d"
+		}
+	]
+}

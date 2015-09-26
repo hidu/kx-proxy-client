@@ -4,6 +4,7 @@
     ],
     "parent":"",
     "ssl":true,
+    "hidden_ip":true,
     "ssl_client_cert" :"",
     "ssl_server_key" :""
 }
