@@ -1,9 +1,9 @@
 {
     "proxy":[
-        {"url":"https://you-proxy.com/","weight":1,"secertKey":""}
+        {"url":"http://127.0.0.1:9090/","weight":1,"secertKey":"RKfWL1KiXzmjj9v1EtTpAg"}
     ],
     "parent":"",
-    "ssl":true,
+    "ssl":false,
     "hidden_ip":true,
     "ssl_client_cert" :"",
     "ssl_server_key" :""

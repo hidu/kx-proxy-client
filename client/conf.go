@@ -11,8 +11,8 @@ import (
 )
 
 type ClientConf struct {
-	Proxies         []ProxyItem `json:"proxy"`
-	Proxy_All       []string
+	Proxies         []*ProxyItem `json:"proxy"`
+	Proxy_All       []int
 	Total           int
 	ParentProxy     string `json:"parent"`
 	SSlOn           bool   `json:"ssl"`
@@ -29,12 +29,13 @@ type ProxyItem struct {
 	SecertKey string `json:"secertKey"`
 }
 
-func (conf *ClientConf) GetOneHost() string {
+func (conf *ClientConf) GetOneProxy() *ProxyItem {
 	if conf.Total < 1 {
-		return ""
+		return nil
 	}
 	n := rand.Int() % conf.Total
-	return conf.Proxy_All[n]
+	index := conf.Proxy_All[n]
+	return conf.Proxies[index]
 }
 
 func (conf *ClientConf) IsProxyHost(urlClient string) bool {
@@ -45,13 +46,6 @@ func (conf *ClientConf) IsProxyHost(urlClient string) bool {
 		}
 	}
 	return false
-}
-
-func (conf *ClientConf) GetSecertKeyByUrl(proxyUrl string) string {
-	if v, has := conf.SecertKeyMaps[proxyUrl]; has {
-		return v
-	}
-	return ""
 }
 
 func LoadConf(confPath string) *ClientConf {
@@ -68,7 +62,7 @@ func LoadConf(confPath string) *ClientConf {
 		log.Fatalln("no hosts")
 	}
 	conf.SecertKeyMaps = make(map[string]string)
-	for _, item := range conf.Proxies {
+	for index, item := range conf.Proxies {
 		if item.Weight < 1 {
 			log.Println("skip ", item.Url)
 			continue
@@ -80,7 +74,7 @@ func LoadConf(confPath string) *ClientConf {
 			log.Fatalln("weight must <1000,current is :", item.Weight)
 		}
 		for i := 0; i < item.Weight; i++ {
-			conf.Proxy_All = append(conf.Proxy_All, proxyUrl)
+			conf.Proxy_All = append(conf.Proxy_All, index)
 		}
 	}
 	conf.Total = len(conf.Proxy_All)

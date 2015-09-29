@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
@@ -13,10 +14,17 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	//	"bytes"
+	//	"bufio"
+	"io/ioutil"
+	"strings"
+	//"net/http/httputil"
 )
 
 const (
 	aesTable = "kxproxyb8PsyCQ4b"
+	kxKey    = "KxKey"
+	kxEnc    = "kxEnc"
 )
 
 var (
@@ -28,7 +36,7 @@ var addr = flag.String("addr", ":8080", "proxy listen address")
 
 var conf *client.ClientConf
 
-var MitmConnect *goproxy.ConnectAction
+var mitmConnect *goproxy.ConnectAction
 
 func init() {
 	var err error
@@ -37,32 +45,57 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
 func initMimtConnect() {
-	MitmConnect = &goproxy.ConnectAction{
+	mitmConnect = &goproxy.ConnectAction{
 		Action:    goproxy.ConnectMitm,
 		TLSConfig: goproxy.TLSConfigFromCA(&conf.SslCert),
 	}
 }
 
-var AlwaysMitm goproxy.FuncHttpsHandler = func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
+var alwaysMitm goproxy.FuncHttpsHandler = func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
 	log.Println("https conn", host, ctx.Req.URL.String())
-	return MitmConnect, host
+	return mitmConnect, host
 }
 
-var HttpMitmConnect = &goproxy.ConnectAction{
+var httpMitmConnect = &goproxy.ConnectAction{
 	Action: goproxy.ConnectHTTPMitm,
 }
-var AlwaysHttpMitm goproxy.FuncHttpsHandler = func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
+var alwaysHTTPMitm goproxy.FuncHttpsHandler = func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
 	log.Println("https conn", host, ctx.Req.URL.String())
-	return HttpMitmConnect, host
+	return httpMitmConnect, host
 }
 
 func responseHanderFunc(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
-	if resp != nil {
-		resp.Header.Set("Connection", "close")
+	if resp == nil {
+		return resp
 	}
+	resp.Header.Set("Connection", "close")
+	if true {
+		//		fmt.Println("resp_header:\n",resp.Header)
+		//		bd,_:=ioutil.ReadAll(resp.Body)
+		//		fmt.Println("bd:",string(bd))
+	}
+	kxEnc := resp.Header.Get("_kx_enc_")
+	if kxEnc == "1" {
+		_ContentEncoding := resp.Header.Get("_kx_content_encoding")
+		resp.Header.Del("_kx_content_encoding")
+		fmt.Println("_ContentEncoding", _ContentEncoding)
+		if _ContentEncoding != "" {
+			resp.Header.Set("Content-Encoding", _ContentEncoding)
+		}
+
+		body := resp.Body
+		skey := resp.Request.Header.Get(kxKey)
+		encodeURL := resp.Request.URL.Path[len("/p/"):]
+		r := cipherStreamReader(skey, encodeURL, body)
+		resp.Body = ioutil.NopCloser(r)
+	}
+	//			bd,err:=ioutil.ReadAll(resp.Body)
+	//		fmt.Println("bd:",string(bd),"err:",err)
+
 	return resp
 }
 
@@ -74,8 +107,26 @@ func copyHeaders(dst, src http.Header) {
 	}
 }
 
-func encryptUrl(srcUrl string) (string, error) {
-	src := []byte(srcUrl)
+//对数据流进行加密
+func cipherStreamReader(skey string, encodeURL string, reader io.Reader) *cipher.StreamReader {
+	key := strMd5(fmt.Sprintf("%s#kxsw#%s", skey, encodeURL))
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+	var iv [aes.BlockSize]byte
+	stream := cipher.NewOFB(block, iv[:])
+	return &cipher.StreamReader{S: stream, R: reader}
+}
+
+func strMd5(mystr string) []byte {
+	h := md5.New()
+	h.Write([]byte(mystr))
+	return h.Sum(nil)
+}
+
+func encryptURL(srcURL string) (string, error) {
+	src := []byte(srcURL)
 	padLen := aes.BlockSize - (len(src) % aes.BlockSize)
 
 	for i := 0; i < padLen; i++ {
@@ -101,39 +152,49 @@ func encryptUrl(srcUrl string) (string, error) {
 
 func requestHanderFunc(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	urlOld := r.URL.String()
-	log.Println("url->", urlOld)
+	log.Println("raw_url->", urlOld)
 	r.Header.Set("Connection", "Close")
 	r.Header.Del("Proxy-Connection")
 
 	if conf.IsProxyHost(urlOld) {
-		log.Println(urlOld, "direct")
+		log.Println("direct IsProxyHost->", urlOld)
 		return r, nil
 	}
 
 	//	var urlReq = base64.StdEncoding.EncodeToString([]byte(urlOld))
-	urlReq, err := encryptUrl(urlOld)
+	urlReq, err := encryptURL(urlOld)
 
 	if err != nil {
-		log.Println("encryptUrl", urlOld, "failed", err)
-		return r, nil
+		log.Println("encryptURL", urlOld, "failed", err)
+		return r, goproxy.NewResponse(r, goproxy.ContentTypeHtml, http.StatusBadGateway, "encrypt url failed")
 	}
 
-	proxyUrl := conf.GetOneHost()
-	urlNew := proxyUrl + "/p/" + urlReq
+	proxy := conf.GetOneProxy()
+	if proxy == nil {
+		log.Println("no proxy")
+		return r, goproxy.NewResponse(r, goproxy.ContentTypeHtml, http.StatusBadGateway, "no proxy")
+	}
+
+	urlNew := strings.TrimRight(proxy.Url, "/") + "/p/" + urlReq
+
 	log.Println(urlOld, "--->", urlNew)
 	//	var err error
 	r.URL, err = url.Parse(urlNew)
-	r.Host = r.URL.Host
-
-	r.Header.Add("is_client", "1")
-	r.Header.Set("KxKey", conf.GetSecertKeyByUrl(proxyUrl))
-	if conf.HiddenIp {
-		r.Header.Set("hidden_ip", "1")
-	}
 
 	if err != nil {
 		log.Println("parse new url failed", err)
+		return r, goproxy.NewResponse(r, goproxy.ContentTypeHtml, http.StatusBadGateway, "create url failed,check proxy url")
 	}
+
+	r.Host = r.URL.Host
+
+	r.Header.Add("is_client", "1")
+	r.Header.Set(kxKey, proxy.SecertKey)
+	if conf.HiddenIp {
+		r.Header.Set("hidden_ip", "1")
+	}
+	//	panic("a")
+
 	return r, nil
 }
 func init() {
@@ -152,9 +213,9 @@ func main() {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Verbose = *verbose
 	if conf.SSlOn {
-		proxy.OnRequest().HandleConnectFunc(AlwaysMitm)
+		proxy.OnRequest().HandleConnectFunc(alwaysMitm)
 	} else {
-		proxy.OnRequest().HandleConnectFunc(AlwaysHttpMitm)
+		proxy.OnRequest().HandleConnectFunc(alwaysHTTPMitm)
 	}
 	proxy.OnRequest().DoFunc(requestHanderFunc)
 	proxy.OnResponse().DoFunc(responseHanderFunc)
