@@ -3,9 +3,13 @@ package client
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	kxutil "github.com/hidu/kx-proxy/util"
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,9 +28,11 @@ type ClientConf struct {
 }
 
 type ProxyItem struct {
-	Url       string `json:"url"`
-	Weight    int    `json:"weight"`
-	SecertKey string `json:"secertKey"`
+	Url                 string `json:"url"`
+	Weight              int    `json:"weight"`
+	SecertKey           string `json:"secertKey"`
+	timeOffsetSec       int64  //和服务器的时间偏移量
+	timeOffsetCheckTime *time.Time
 }
 
 func (conf *ClientConf) GetOneProxy() *ProxyItem {
@@ -35,7 +41,8 @@ func (conf *ClientConf) GetOneProxy() *ProxyItem {
 	}
 	n := rand.Int() % conf.Total
 	index := conf.Proxy_All[n]
-	return conf.Proxies[index]
+	item := conf.Proxies[index]
+	return item
 }
 
 func (conf *ClientConf) IsProxyHost(urlClient string) bool {
@@ -46,6 +53,52 @@ func (conf *ClientConf) IsProxyHost(urlClient string) bool {
 		}
 	}
 	return false
+}
+
+func (item *ProxyItem) getTimeOffset() error {
+	if item.timeOffsetCheckTime != nil {
+		return nil
+	}
+	now := time.Now()
+
+	urlStr := strings.TrimRight(item.Url, "/") + "/hello"
+	resp, err := http.Get(urlStr)
+	if err != nil {
+		log.Println("get timeout osset failed [", urlStr, "],", err)
+		return nil
+	}
+	defer resp.Body.Close()
+	data, _ := ioutil.ReadAll(resp.Body)
+	d, err := kxutil.DecryptURL(string(data))
+	if err != nil {
+		log.Println("decode data failed,data [", string(data), "]", err)
+		return nil
+	}
+	unixTime, err := strconv.ParseInt(d, 10, 64)
+	if err != nil {
+		log.Println("parse data to int failed:", d, "err:", err)
+		return nil
+	}
+	item.timeOffsetSec = now.Unix() - unixTime
+	item.timeOffsetCheckTime = &now
+	log.Println("gettimeoffsetsec_suc:",item.timeOffsetSec)
+	return nil
+}
+
+// 获取远程服务的时间
+func (item *ProxyItem) getServerTime() int64 {
+	item.getTimeOffset()
+	return time.Now().Unix() - item.timeOffsetSec
+}
+
+// GenReqUrl 生成一个新的url地址
+func (item *ProxyItem) GenReqUrl(urlReq string) (string, error) {
+	str := fmt.Sprintf("%d|%s", item.getServerTime(), urlReq)
+	enURL, err := kxutil.EncryptURL(str)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/p/%s", strings.TrimRight(item.Url, "/"), enURL), nil
 }
 
 func LoadConf(confPath string) *ClientConf {
