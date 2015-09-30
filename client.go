@@ -122,7 +122,8 @@ func requestHanderFunc(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *
 	if conf.HiddenIp {
 		r.Header.Set("hidden_ip", "1")
 	}
-
+	
+	kxutil.HeaderEnc(r.Header)
 	//	body:=r.Body
 	//	reader := kxutil.CipherStreamReader(proxy.SecertKey, encodeURL, body)
 	//	r.Body = ioutil.NopCloser(reader)
