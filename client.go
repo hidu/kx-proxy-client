@@ -54,20 +54,14 @@ func responseHanderFunc(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Respon
 		return resp
 	}
 	resp.Header.Set("Connection", "close")
-	if true {
-		//		fmt.Println("resp_header:\n",resp.Header)
-		//		bd,_:=ioutil.ReadAll(resp.Body)
-		//		fmt.Println("bd:",string(bd))
-	}
-	kxEnc := resp.Header.Get("_kx_enc_")
-	if kxEnc == "1" {
-		_ContentEncoding := resp.Header.Get("_kx_content_encoding")
-		resp.Header.Del("_kx_content_encoding")
-		fmt.Println("_ContentEncoding", _ContentEncoding)
-		if _ContentEncoding != "" {
-			resp.Header.Set("Content-Encoding", _ContentEncoding)
-		}
 
+	kxEnc := resp.Header.Get("_kx_enc_")
+
+	kxutil.HeaderDec(resp.Header)
+	//goproxy 会对Content-Encoding =gzip 做处理
+	//HeaderDec 会对 Content-Encoding 做处理可以让这里的逻辑读取到原始的加密的数据流
+
+	if kxEnc == "1" {
 		body := resp.Body
 		skey := resp.Request.Header.Get(kxKey)
 		encodeURL := resp.Request.URL.Path[len("/p/"):]
@@ -105,7 +99,7 @@ func requestHanderFunc(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *
 		return r, goproxy.NewResponse(r, goproxy.ContentTypeHtml, http.StatusBadGateway, "no proxy")
 	}
 
-	urlNew, err := proxy.GenReqUrl(urlOld)
+	urlNew, _, err := proxy.GenReqUrl(urlOld)
 
 	if err != nil {
 		log.Println("encryptURL", urlOld, "failed", err)
@@ -128,6 +122,11 @@ func requestHanderFunc(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *
 	if conf.HiddenIp {
 		r.Header.Set("hidden_ip", "1")
 	}
+
+	//	body:=r.Body
+	//	reader := kxutil.CipherStreamReader(proxy.SecertKey, encodeURL, body)
+	//	r.Body = ioutil.NopCloser(reader)
+	//	r.Header.Set("_kx_enc_","1")
 	//	panic("a")
 
 	return r, nil

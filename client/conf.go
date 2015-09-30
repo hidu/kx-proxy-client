@@ -81,7 +81,7 @@ func (item *ProxyItem) getTimeOffset() error {
 	}
 	item.timeOffsetSec = now.Unix() - unixTime
 	item.timeOffsetCheckTime = &now
-	log.Println("gettimeoffsetsec_suc:",item.timeOffsetSec)
+	log.Println("gettimeoffsetsec_suc:", item.timeOffsetSec)
 	return nil
 }
 
@@ -92,13 +92,13 @@ func (item *ProxyItem) getServerTime() int64 {
 }
 
 // GenReqUrl 生成一个新的url地址
-func (item *ProxyItem) GenReqUrl(urlReq string) (string, error) {
+func (item *ProxyItem) GenReqUrl(urlReq string) (newURL string, encURL string, err error) {
 	str := fmt.Sprintf("%d|%s", item.getServerTime(), urlReq)
 	enURL, err := kxutil.EncryptURL(str)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return fmt.Sprintf("%s/p/%s", strings.TrimRight(item.Url, "/"), enURL), nil
+	return fmt.Sprintf("%s/p/%s", strings.TrimRight(item.Url, "/"), enURL), enURL, nil
 }
 
 func LoadConf(confPath string) *ClientConf {
